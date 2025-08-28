@@ -1,100 +1,40 @@
-import { Client } from 'pg'; 
+import { Client } from 'pg';
 
 const client = new Client({
-    user: 'optionTradTest',
-    host: 'localhost',
-    database: 'postgres',
-    password: 'admin',
-    port: 5430,
+  user: 'optionTradTest',
+  host: 'localhost',
+  database: 'postgres',
+  password: 'admin',
+  port: 5430,
 });
-client.connect();
-//15 seconds
-const SECONDS_IN_DAY= 86400;
-const SECONDS_IN_MIN= 60;
 
-async function refreshViewsFTSeconds() {
+async function refreshViews() {
+  try {
+    // get all materialized views in public schema
+    const res = await client.query(`
+      SELECT matviewname
+      FROM pg_matviews
+      WHERE schemaname = 'public';
+    `);
 
-    await client.query('REFRESH MATERIALIZED VIEW klines_15s');
-
-    console.log("Materialized views refreshed successfully for 15secs");
-}
-// 30 seconds
-async function refreshViewsTSeconds() {
-
-    await client.query('REFRESH MATERIALIZED VIEW klines_30s');
-
-    console.log("Materialized views refreshed successfully for 30secs");
-}
-async function refreshViewsMinutes() {
-    
-    await client.query('REFRESH MATERIALIZED VIEW klines_1m');
-    
-    console.log("Materialized views refreshed successfully for 1m");
-}
-async function refreshViewsFMinutes() {
-
-    await client.query('REFRESH MATERIALIZED VIEW klines_5m');
-
-    console.log("Materialized views refreshed successfully for 5m");
+    for (const row of res.rows) {
+      const viewName = row.matviewname;
+      await client.query(`REFRESH MATERIALIZED VIEW ${viewName};`);
+      console.log(`Refreshed: ${viewName}`);
+    }
+  } catch (err) {
+    console.error("Error refreshing views:", err);
+  }
 }
 
-async function refreshViewsHour() {
+async function main() {
+  await client.connect();
 
-    await client.query('REFRESH MATERIALIZED VIEW klines_1h');
+  // refresh immediately once
+  await refreshViews();
 
-    console.log("Materialized views refreshed successfully for 1 hour");
+  // schedule refresh every 10 seconds
+  setInterval(refreshViews, 10_000);
 }
 
-
-
-async function refreshViewsDay() {
-
-    await client.query('REFRESH MATERIALIZED VIEW klines_1d');
-
-    console.log("Materialized views refreshed successfully for a Day");
-}
-
-async function refreshViewsWeek() {
-    await client.query('REFRESH MATERIALIZED VIEW klines_1w');
-
-    console.log("Materialized views refreshed successfully for a Week");
-}
-
-refreshViewsFTSeconds().catch(console.error);
-refreshViewsTSeconds().catch(console.error);
-refreshViewsMinutes().catch(console.error);
-refreshViewsFMinutes().catch(console.error);
-refreshViewsHour().catch(console.error);
-refreshViewsDay().catch(console.error);
-refreshViewsWeek().catch(console.error);
-
-setInterval(() => {
-    refreshViewsFTSeconds()
-}, 1000 * 15);
-
-
-setInterval(() => {
-    refreshViewsTSeconds()
-}, 1000 * 30 );
-
-
-setInterval(() => {
-    refreshViewsMinutes()
-}, 1000 * SECONDS_IN_MIN );
-
-
-setInterval(() => {
-    refreshViewsFMinutes()
-}, 1000 * SECONDS_IN_MIN * 15 );
-
-setInterval(() => {
-    refreshViewsHour()
-}, 1000 * SECONDS_IN_MIN * 60);
-
-setInterval(() => {
-    refreshViewsDay()
-}, 1000 * SECONDS_IN_DAY );
-
-setInterval(() => {
-    refreshViewsWeek()
-}, 1000 * SECONDS_IN_DAY *7 );
+main().catch(console.error);

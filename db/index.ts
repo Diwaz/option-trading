@@ -1,72 +1,87 @@
-// 1. Import the libraries you need
-// - `pg` is the PostgreSQL client for Node.js
-// - `redis` is the Redis client
-// - `DbMessage` is your own type definition for messages in the queue
 import { Client } from 'pg';
 import { createClient } from 'redis';
+import { type Trade } from '../poller-be';
 
-// 2. Configure PostgreSQL connection
-//    - You need database credentials: user, host, db name, password, port.
-//    - Create a new client instance and connect.
+// 1. Configure PostgreSQL connection
 const pg = new Client({
-    user: 'optionTradTest',         // PostgreSQL username
-    host: 'localhost',         // where the DB server is running
-    database: 'postgres',   // your DB name
-    password: 'admin', // password
-    port: 5430,                // default PostgreSQL port
+  user: 'optionTradTest',
+  host: 'localhost',
+  database: 'postgres',
+  password: 'admin',
+  port: 5430,
 });
-pg.connect(); // Establish connection
+pg.connect();
 
-// 3. Create an async function (entry point for your app)
-async function main (){
-    const redis = createClient();
-    await redis.connect();
-    while(true){
-        const response = await redis.brPop("kline",0);
-        if(response){
-            const {element} = response;
-            try {
-                const trade = JSON.parse(element);
-                
-                const price = trade.p;
-                const timestamp = new Date(trade.T);
-                const query = 'INSERT INTO BTCUSDT (time, price) VALUES ($1, $2)';
-                // TODO: How to add volume?
-                console.log('val,query',timestamp,price);
-                const values = [timestamp, price];
-                await pg.query(query, values);
-            }catch {    
-                    console.error("Invalid JSON:", element);
-            }
-        }
-    }
+// 2. Extract only relevant fields
+const extractReleventData = (trade: Trade) => {
+  const price = trade.p;
+  const timestamp = new Date(trade.T);
+  const volume = trade.q;
+  return { timestamp, price, volume };
+};
+
+// 3. Batch Insert Helper
+async function insertBatch(table: string, rows: { timestamp: Date; price: number; volume: number }[]) {
+  if (rows.length === 0) return;
+
+  const placeholders: string[] = [];
+  const values: any[] = [];
+
+  rows.forEach((row, i) => {
+    const idx = i * 3; // 3 fields per row
+    placeholders.push(`($${idx + 1}, $${idx + 2}, $${idx + 3})`);
+    values.push(row.timestamp, row.price, row.volume);
+  });
+
+  const query = `
+    INSERT INTO ${table} (time, price, volume)
+    VALUES ${placeholders.join(',')}
+  `;
+
+  await pg.query(query, values);
 }
+
+// 4. Main loop
+async function main() {
+  const redis = createClient();
+  await redis.connect();
+
+  let ethBatch: any[] = [];
+  let btcBatch: any[] = [];
+  let solBatch: any[] = [];
+
+  while (true) {
+    const response = await redis.brPop('tradeData', 0);
+    if (!response) continue;
+
+    const { element } = response;
+    try {
+      const trade: Trade = JSON.parse(element);
+      const data = extractReleventData(trade);
+
+      if (trade.s === 'ETHUSDT') {
+        ethBatch.push(data);
+        if (ethBatch.length >= 100) {
+          await insertBatch('ETHUSDT', ethBatch);
+          ethBatch = [];
+        }
+      } else if (trade.s === 'BTCUSDT') {
+        btcBatch.push(data);
+        if (btcBatch.length >= 100) {
+          await insertBatch('BTCUSDT', btcBatch);
+          btcBatch = [];
+        }
+      } else if (trade.s === 'SOLUSDT') {
+        solBatch.push(data);
+        if (solBatch.length >= 100) {
+          await insertBatch('SOLUSDT', solBatch);
+          solBatch = [];
+        }
+      }
+    } catch (err) {
+      console.error('Invalid JSON:', element, err);
+    }
+  }
+}
+
 main();
-    // 4. Connect to Redis
-    //    - Create a client
-    //    - Call `.connect()` (async)
-
-    // 5. Start a loop to process messages from Redis queue
-    //    - Here you keep listening forever
-    //    - `rPop` removes the last item from the list/queue in Redis
-        // Try to get a message from Redis
-
-            // No message in queue
-            // -> You could `await new Promise(r => setTimeout(r, 100));` 
-            //    to avoid busy loop, but here it's left blank.
-            // 6. Parse the message into your type
-            //    - Messages are stored as JSON strings in Redis
-
-            // 7. Decide what to do based on the message type
-
-                // Extract fields from message
-                // 8. Build an SQL INSERT query
-                //    - Use parameterized queries ($1, $2, …) for safety (avoids SQL injection)
-                
-                // 9. Create the values array that matches $1, $2
-                //    - timestamp = $1
-                //    - price = $2
-                // TODO: If you also have `volume`, add it to both the query and values array.
-
-                // 10. Execute query
-// 11. Call the main function to start everything
