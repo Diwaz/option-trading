@@ -61,7 +61,7 @@ const TradePoller = (market:string,redisTopic:string)=> {
   // console.log('data',JSON.stringify(trade));
   await publisher.publish('tradeData',JSON.stringify(trade));
   await publisher.rPush('tradeData',JSON.stringify(trade));
-  console.log(TradeCollector.length);
+  // console.log(TradeCollector.length);
 });
 
 ws.on('error', function error(data) {

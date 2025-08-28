@@ -24,7 +24,7 @@ async function refreshViews() {
 
       // count rows in the materialized view
       const countRes = await client.query(`SELECT COUNT(*) FROM ${viewName};`);
-      console.log(`📊 ${viewName}: ${countRes.rows[0].count} rows`);
+      console.log(`> ${viewName}: ${countRes.rows[0].count} rows`);
     }
   } catch (err) {
     console.error("Error refreshing views:", err);
@@ -44,7 +44,7 @@ async function logTableCounts() {
     for (const row of res.rows) {
       const tableName = row.tablename;
       const countRes = await client.query(`SELECT COUNT(*) FROM ${tableName};`);
-      console.log(`📊 ${tableName}: ${countRes.rows[0].count} rows`);
+      console.log(`* ${tableName}: ${countRes.rows[0].count} rows`);
     }
   } catch (err) {
     console.error("Error calculating table lengths:", err);

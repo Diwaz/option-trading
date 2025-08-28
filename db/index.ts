@@ -39,6 +39,8 @@ async function insertBatch(table: string, rows: { timestamp: Date; price: number
   `;
 
   await pg.query(query, values);
+  console.log(`inserted ${rows.length} rows in ${table}`);
+  
 }
 
 // 4. Main loop
