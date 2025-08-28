@@ -57,10 +57,11 @@ const TradePoller = (market:string,redisTopic:string)=> {
     const trade:Trade = JSON.parse(data.toString());
   // console.log('received:',trade );
   // publishData(trade);
-  console.log('data',JSON.stringify(trade));
+  TradeCollector.push(trade)
+  // console.log('data',JSON.stringify(trade));
   await publisher.publish('tradeData',JSON.stringify(trade));
   await publisher.rPush('tradeData',JSON.stringify(trade));
-  
+  console.log(TradeCollector.length);
 });
 
 ws.on('error', function error(data) {

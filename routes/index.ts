@@ -4,6 +4,7 @@ import tradeRouter from "./tradeData.js";
 import authRoutes from './auth.js'
 import balanceRoutes from './balances.js'
 import orderRoutes from './order.js'
+import priceRoutes from './price.js'
 
 const router = express.Router();
 
@@ -22,6 +23,7 @@ router.use("/trade", tradeRouter);
 router.use("/auth", authRoutes);
 router.use("/balances", balanceRoutes);
 router.use("/order", orderRoutes);
+router.use("/getPrice",priceRoutes);
 
 
 
