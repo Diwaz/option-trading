@@ -9,11 +9,11 @@ import { createClient } from 'redis';
 //    - You need database credentials: user, host, db name, password, port.
 //    - Create a new client instance and connect.
 const pg = new Client({
-    user: 'postgres',         // PostgreSQL username
+    user: 'optionTradTest',         // PostgreSQL username
     host: 'localhost',         // where the DB server is running
     database: 'postgres',   // your DB name
     password: 'admin', // password
-    port: 5432,                // default PostgreSQL port
+    port: 5430,                // default PostgreSQL port
 });
 pg.connect(); // Establish connection
 
@@ -27,7 +27,7 @@ async function main (){
             const {element} = response;
             try {
                 const trade = JSON.parse(element);
-                console.log(trade.p);
+                
                 const price = trade.p;
                 const timestamp = new Date(trade.T);
                 const query = 'INSERT INTO BTCUSDT (time, price) VALUES ($1, $2)';

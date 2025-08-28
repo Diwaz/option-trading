@@ -1,4 +1,4 @@
-# polar-be
+# poller-be
 
 To install dependencies:
 

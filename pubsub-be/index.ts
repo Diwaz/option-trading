@@ -1,7 +1,7 @@
 // server.js
 import { createClient } from 'redis';
 import WebSocket, { WebSocketServer } from 'ws';
-import type {Trade} from '../polar-be/index';
+import type {Trade} from '../poller-be/index';
 
 // This array will ONLY store clients that have successfully subscribed.
 let subscribedUsers = new Set(); // Using a Set is better to prevent duplicates.
