@@ -8,7 +8,7 @@ const balances: Record<string, any> = {};
 
 // GET /balance
 router.get("/", (req, res) => {
-  const { userId } = req.body;
+  const  {userId}  = req.body;
 
   if (!userId || typeof userId !== "string") {
     return res.status(400).json({ error: "userId query parameter is required" });
@@ -25,34 +25,59 @@ router.get("/", (req, res) => {
 
 // Helper function (to be called in auth.ts on registration)
 export const initBalanceForUser = (userId: string) => {
-  balances[userId] = { usd: { qty: 1000 } }; // default starting balance
+  balances[userId] = { usd: { qty: 500000 } }; // default starting balance
 };
-export const updateBalanceForUser = (userId:string,token :string ,price : number , quantity: number, type : "buy" | "sell")=>{
-    const userBalance = balances[userId]
-if (type === "buy") {
-    // Deduct USD
-    userBalance.usd.qty -= price * quantity;
+export const updateBalanceForUser = (
+  userId:string,
+  token :string ,
+  price : number ,
+  leverage:number,
+  margin: number,
+  type : "buy" | "sell",
+)=>{
+      let userBalance = balances[userId];
+      console.log("type of trade",type);
+      
+      if (type === "buy"){
+        // deduct user balance
+        // 1 . get margin 
+        userBalance.usd.qty -= margin;
+        console.log('stock buy worth',margin);
 
-    // Add token
-    if (!userBalance[token]) {
-      userBalance[token] = { qty: 0, type: "buy" };
-    }
-    userBalance[token].qty += quantity;
-    userBalance[token].type = "buy";
-  }
+      }
+      if (type === "sell"){
+        userBalance.qty.usd += (margin*1e2);
+      }
+//   // BUY-SELL WITHOUT LEVERAGE 
+//     // if (!leverage){
 
-  if (type === "sell") {
-    // Add USD
-    userBalance.usd.qty += price * quantity;
+//     // }
+//     const userBalance = balances[userId]
+//     let qty = Math.trunc(margin)
+// if (type === "buy") {
+//     // Deduct USD
+//     userBalance.usd.qty -= ;
 
-    // Deduct token
-    if (!userBalance[token]) {
-      userBalance[token] = { qty: 0, type: "sell" };
-    }
-    userBalance[token].qty -= quantity;
-    if (userBalance[token].qty < 0) userBalance[token].qty = 0;
-    userBalance[token].type = "sell";
-  }
+//     // Add token
+//     if (!userBalance[token]) {
+//       userBalance[token] = { qty: 0, type: "buy" };
+//     }
+//     userBalance[token].qty += margin;
+//     userBalance[token].type = "buy";
+//   }
+
+//   if (type === "sell") {
+//     // Add USD
+//     userBalance.usd.qty +=  (margin/1e2);
+
+//     // Deduct token
+//     if (!userBalance[token]) {
+//       userBalance[token] = { qty: 0, type: "sell" };
+//     }
+//     userBalance[token].qty -= margin;
+//     if (userBalance[token].qty < 0) userBalance[token].qty = 0;
+//     userBalance[token].type = "sell";
+//   }
 
 }
 

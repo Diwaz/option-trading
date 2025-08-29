@@ -10,7 +10,7 @@ const subscriber = client.duplicate();
 await subscriber.connect();
 
 // Store latest prices for all symbols
-let prices = {
+export let prices = {
   SOL: 0,
   ETH: 0,
   BTC: 0,
@@ -20,7 +20,7 @@ let prices = {
 subscriber.subscribe("tradeData", (message) => {
   try {
     const data = JSON.parse(message);
-    console.log("Received:", data);
+    // console.log("Received:", data);
 
     // Assuming published message looks like: { symbol: "btc", bid: 12345 }
     const { symbol, buyPrice } = data;
