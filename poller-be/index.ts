@@ -39,6 +39,13 @@ await publisher.connect();
   m:Boolean,
   M:Boolean
 }
+interface spreadData {
+  symbol: String,
+  buyPrice: number,
+  sellPrice: number,
+  decimal: number,
+
+}
 
 export const tradeMarkets = ['btcusdt' , 'ethusdt','solusdt'];
 const TradeCollector:Trade[] =[];
@@ -57,9 +64,18 @@ const TradePoller = (market:string,redisTopic:string)=> {
     const trade:Trade = JSON.parse(data.toString());
   // console.log('received:',trade );
   // publishData(trade);
-  TradeCollector.push(trade)
+  // TradeCollector.push(trade)
   // console.log('data',JSON.stringify(trade));
-  await publisher.publish('tradeData',JSON.stringify(trade));
+
+    const spreadData: spreadData = {
+      symbol : trade.s === "SOLUSDT" ? "SOL" : trade.s === "ETHUSDT" ? "ETH" : "BTC",
+      buyPrice : Math.trunc((trade.p * 1.02)*1e4),
+      sellPrice : Math.trunc((trade.p * 0.98)*1e4),
+      decimal: 4
+
+    }  
+    console.log(spreadData)
+  await publisher.publish('tradeData',JSON.stringify(spreadData));
   await publisher.rPush('tradeData',JSON.stringify(trade));
   // console.log(TradeCollector.length);
 });

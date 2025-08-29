@@ -11,22 +11,22 @@ await subscriber.connect();
 
 // Store latest prices for all symbols
 let prices = {
-  SOLUSDT: 0,
-  ETHUSDT: 0,
-  BTCUSDT: 0,
+  SOL: 0,
+  ETH: 0,
+  BTC: 0,
 };
 
 // Subscribe once at startup
 subscriber.subscribe("tradeData", (message) => {
   try {
     const data = JSON.parse(message);
-    // console.log("Received:", data);
+    console.log("Received:", data);
 
     // Assuming published message looks like: { symbol: "btc", bid: 12345 }
-    const { s, p } = data;
+    const { symbol, buyPrice } = data;
     // console.log(s,p)
     // if (s && prices.hasOwnProperty(s)) {
-      prices[s] = p;
+      prices[symbol] = buyPrice;
     //   console.log('here',prices);
     // }
   } catch (e) {

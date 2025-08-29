@@ -22,18 +22,18 @@ const subscribeToRedis = async () => {
   await subscriber.subscribe('tradeData', (message) => {
     const dataJSON:Trade = JSON.parse(message);
     // console.log(`[Redis] Received:`,dataJSON); // Log message from Redis
-
-    const spreadData: spreadData = {
-      bid : dataJSON.p * 1.02,
-      ask : dataJSON.p * 0.98,
-      s : dataJSON.s
-    }  
+    console.log(message);
+    // const spreadData: spreadData = {
+    //   bid : dataJSON.p * 1.02,
+    //   ask : dataJSON.p * 0.98,
+    //   s : dataJSON.s
+    // }  
     
     // Send the message to every client in our Set of subscribers
     subscribedUsers.forEach((ws) => {
       // Ensure the client is still connected before sending
       if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify(spreadData));
+        ws.send(message);
       }
     });
   });
