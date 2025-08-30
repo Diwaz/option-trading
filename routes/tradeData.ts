@@ -32,7 +32,7 @@ router.get("/", async (req, res) => {
       SELECT *
       FROM ${tableName}
       WHERE bucket BETWEEN $1::timestamptz AND $2::timestamptz
-      ORDER BY bucket ASC;
+      ORDER BY bucket DESC;
     `;
     const result = await client.query(query, [startTime, endTime]);
 

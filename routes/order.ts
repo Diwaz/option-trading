@@ -26,6 +26,7 @@ export const openTrades :Record<string,{trades:openTrade[]}>={};
 export const mapUserToTrades: Record<string,[]>={};
 const closedTrades :Record<string,{trades:closedTrade[]}>={};
 
+
 export const openTradesArray :openTrade[] =[];
 
 // let orderCounter = 1;
@@ -48,17 +49,25 @@ const addTrades = (userId: string , trade: openTrade) =>{
 }
   
 }
+export const mapOrderIdToUserId = (orderId:string):string | null => {
+  for (const [userId , {trades}]  of Object.entries(openTrades)){
+      if (trades.some(trade => trade.orderId === orderId)){
+        return userId;
+      }
+  }
+  return null;
+}
 
-const closeTrade = (userId:string,orderId:string,user) => {
+export const closeTrade = (userId:string,orderId:string) => {
 
-  // const user= openTrades[userId];
+  const user= openTrades[userId];
 
   if (!user) return null;
 
   const tradeIndex = user.trades.findIndex(i=>i.orderId === orderId);
   const tradeArrayIndex = openTradesArray.findIndex(i=>i.orderId === orderId);
   const trade  = user.trades[tradeIndex];
-  const asset = trade.asset;
+  const asset = trade?.asset;
   const closingPrice = prices[asset];
 
   // calculate pnl 
@@ -106,7 +115,7 @@ const rawPnl = (closePrice - openPrice) * qty;
 // POST /trade/
 router.post("/", (req, res) => {
   const { asset, userId, type,leverage,margin } = req.body;
-
+  
   if (!asset || !userId || !type || !leverage || !margin) {
     return res.status(411).json({ message: "Incorrect inputs" });
   }
@@ -169,7 +178,7 @@ router.post('/close',(req,res)=>{
     })
    }
    const user = openTrades[userId];
-  const ct = closeTrade(userId,orderId,user);
+  const ct = closeTrade(userId,orderId);
 
   if (!ct){
    return res.status(404).json({

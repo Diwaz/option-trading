@@ -5,7 +5,8 @@ import cors from "cors";
 import morgan from "morgan";
 import routes from './routes/index.ts'
 import { createClient } from "redis";
-import { openTrades, openTradesArray } from "./routes/order.ts";
+import { closeTrade, mapOrderIdToUserId, openTrades, openTradesArray } from "./routes/order.ts";
+
 
 
 const client = createClient();
@@ -24,7 +25,6 @@ app.use(morgan("dev"));
 app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use("/", routes);
-
 
 
 
@@ -58,6 +58,11 @@ const liquidationEngine = (liveTrade ) =>{
           // close order
           const index = openTradesArray.findIndex(i=>i.orderId == order.orderId);
           openTradesArray.splice(index,1)
+          const userId:string | null = mapOrderIdToUserId(order.orderId);
+          if (!userId){
+            return ;
+          }
+          closeTrade(userId,order.orderId);
           console.log("order closed");
           
         }

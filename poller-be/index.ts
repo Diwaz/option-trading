@@ -69,8 +69,8 @@ const TradePoller = (market:string,redisTopic:string)=> {
 
     const spreadData: spreadData = {
       symbol : trade.s === "SOLUSDT" ? "SOL" : trade.s === "ETHUSDT" ? "ETH" : "BTC",
-      buyPrice : Math.trunc((trade.p * 1.02)*1e4),
-      sellPrice : Math.trunc((trade.p * 0.98)*1e4),
+      buyPrice : Math.trunc((trade.p * 1.01)*1e4),
+      sellPrice : Math.trunc((trade.p * 0.99)*1e4),
       decimal: 4
 
     }  

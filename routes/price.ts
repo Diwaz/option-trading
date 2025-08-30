@@ -15,7 +15,9 @@ export let prices = {
   ETH: 0,
   BTC: 0,
 };
-
+const liquidationEngine = (trade) =>{
+    
+}
 // Subscribe once at startup
 subscriber.subscribe("tradeData", (message) => {
   try {

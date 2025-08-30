@@ -1,11 +1,11 @@
 const { Client } = require('pg');
 
 const client = new Client({
-  user: 'optionTradTest',
+  user: 'postgres',
   host: 'localhost',
   database: 'postgres',
   password: 'admin',
-  port: 5430,
+  port: 5431,
 });
 
 async function initializeDB(market) {
