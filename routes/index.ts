@@ -28,7 +28,7 @@ const authenticateUser =(req,res,next)=>{
       console.log('userid',user);
       const exists = Object.values(users).some(u => u.username === user.username);
       if (!exists) {
-        return res.status(403).json({ message: "Error for checking reasons while signing up" });
+          return res.status(403).json({ message: "Error while signing up" });
         }
 
 
@@ -49,7 +49,7 @@ router.get("/about", (req, res) => {
 });
 
 // Other route groups
-router.use("/candles", tradeRouter);
+router.use("/trade", tradeRouter);
 router.use("/user", authRoutes);
 router.use(authenticateUser);
 router.use("/balances", balanceRoutes);

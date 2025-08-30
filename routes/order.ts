@@ -1,6 +1,6 @@
 import express, { json, raw } from "express";
 import { updateBalanceForUser } from "./balances";
-import {prices} from './price';
+import {prices} from '../index';
 import {randomUUIDv7} from 'bun';
 
 const router = express.Router();
@@ -22,9 +22,13 @@ interface closedTrade extends openTrade  {
   pnl: number
 }
 // {userId { trades : [ {  trade1 } , { trade2 }] }}
-const openTrades :Record<string,{trades:openTrade[]}>={};
+export const openTrades :Record<string,{trades:openTrade[]}>={};
+export const mapUserToTrades: Record<string,[]>={};
 const closedTrades :Record<string,{trades:closedTrade[]}>={};
-let orderCounter = 1;
+
+export const openTradesArray :openTrade[] =[];
+
+// let orderCounter = 1;
 const addTrades = (userId: string , trade: openTrade) =>{
     try {
       if (!userId || !trade){
@@ -34,6 +38,10 @@ const addTrades = (userId: string , trade: openTrade) =>{
         openTrades[userId] = { trades: [] }; 
       }
       openTrades[userId]?.trades.push(trade);
+      openTradesArray.push(trade);
+      // mapUserToTrades[userId]?.push(trade.orderId);
+      console.log('openTradesArray',openTradesArray);
+      // console.log('mapUserToTrades',mapUserToTrades);
       return true;
 } catch(err){
   return false ;
@@ -48,6 +56,7 @@ const closeTrade = (userId:string,orderId:string,user) => {
   if (!user) return null;
 
   const tradeIndex = user.trades.findIndex(i=>i.orderId === orderId);
+  const tradeArrayIndex = openTradesArray.findIndex(i=>i.orderId === orderId);
   const trade  = user.trades[tradeIndex];
   const asset = trade.asset;
   const closingPrice = prices[asset];
@@ -56,18 +65,35 @@ const closeTrade = (userId:string,orderId:string,user) => {
   // openingQty = trade.openingPrice/margin
   // TotalPnl = closingPrice - trade.openingPrice;
   // netPnl = totalPnl * qty
-  const rawPnl = closingPrice - trade?.openPrice;
-  const exposer = trade?.margin * trade?.leverage;
-  const qty = trade?.openPrice / exposer;
-  const netPnl= rawPnl * qty;
+  // ----------------------------------------------------
+  // const rawPnl = closingPrice - trade?.openPrice;
+  // const exposer = trade?.margin * trade?.leverage;
+  // const qty = trade?.openPrice / exposer;
+  // const netPnl= rawPnl * qty;
+  // 1. Convert back to real numbers
+const openPrice = trade.openPrice / 1e4;
+const closePrice = closingPrice / 1e4;
+const margin = trade.margin / 1e2;
+const leverage = trade.leverage;
+
+// 2. Calculate exposure (not scaled)
+const exposure = margin * leverage;
+
+// 3. Calculate position size (quantity)
+const qty = exposure / openPrice; // how many units of asset bought
+
+// 4. Calculate PnL
+const rawPnl = (closePrice - openPrice) * qty;
+
 
   const closedTrade : closedTrade = {
     ...trade,
     closePrice:closingPrice,
-    pnl:netPnl,
+    pnl:rawPnl,
   }
 
   user.trades.splice(tradeIndex,1);
+  openTradesArray.splice(tradeArrayIndex,1);
 
   if (!closedTrades[userId]) {
     closedTrades[userId] = { trades: [] }; 
@@ -104,6 +130,8 @@ router.post("/", (req, res) => {
   return res.status(200).json({  orderId: orderId });
 });
 
+
+//get open orders
 router.get('/open',(req,res)=>{
     const {userId} = req.body;
     if (!userId){
@@ -116,6 +144,7 @@ router.get('/open',(req,res)=>{
   )
 })
 
+//get closed orders
 router.get('/',(req,res)=>{
     const {userId} = req.body;
     if (!userId){
@@ -129,7 +158,7 @@ router.get('/',(req,res)=>{
 })
 
 
-
+// post to close order
 router.post('/close',(req,res)=>{
   const {orderId,userId} = req.body;
   console.log(orderId);

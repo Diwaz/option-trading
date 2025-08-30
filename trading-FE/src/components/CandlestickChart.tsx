@@ -1,48 +1,86 @@
-import React, { useEffect, useRef } from 'react';
-import { createChart, CandlestickSeriesOptions } from 'lightweight-charts';
+import React, { useEffect, useRef } from "react";
+import { createChart, CrosshairMode, IChartApi } from "lightweight-charts";
 
-const chartOptions = {
-  layout: { textColor: 'black', background: { type: 'solid', color: 'white' } }
-};
+import { priceData } from "./priceData";
+import { volumeData } from "./volumeData";
 
-const candlestickOptions: CandlestickSeriesOptions = {
-  upColor: '#26a69a',
-  downColor: '#ef5350',
-  borderVisible: false,
-  wickUpColor: '#26a69a',
-  wickDownColor: '#ef5350',
-};
-
-const data = [
-  { open: 10, high: 10.63, low: 9.49, close: 9.55, time: 1642427876 },
-  { open: 9.55, high: 10.30, low: 9.42, close: 9.94, time: 1642514276 },
-  { open: 9.94, high: 10.17, low: 9.92, close: 9.78, time: 1642600676 },
-  { open: 9.78, high: 10.59, low: 9.18, close: 9.51, time: 1642687076 },
-  { open: 9.51, high: 10.46, low: 9.10, close: 10.17, time: 1642773476 },
-  { open: 10.17, high: 10.96, low: 10.16, close: 10.47, time: 1642859876 },
-  { open: 10.47, high: 11.39, low: 10.40, close: 10.81, time: 1642946276 },
-  { open: 10.81, high: 11.60, low: 10.30, close: 10.75, time: 1643032676 },
-  { open: 10.75, high: 11.60, low: 10.49, close: 10.93, time: 1643119076 },
-  { open: 10.93, high: 11.53, low: 10.76, close: 10.96, time: 1643205476 }
-];
-
-const CandlestickChart: React.FC = () => {
-  const chartContainerRef = useRef<HTMLDivElement>(null);
+const CandleStickChart: React.FC = () => {
+  const chartContainerRef = useRef<HTMLDivElement | null>(null);
+  const chartRef = useRef<IChartApi | null>(null);
+  const resizeObserver = useRef<ResizeObserver | null>(null);
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
-    const chart = createChart(chartContainerRef.current, chartOptions);
-    const candlestickSeries = chart.addCandlestickSeries(candlestickOptions);
-    candlestickSeries.setData(data);
-    chart.timeScale().fitContent();
+    // ✅ create chart instance
+    const chart = createChart(chartContainerRef.current, {
+      width: chartContainerRef.current.clientWidth,
+      height: 500,
+      layout: {
+        backgroundColor: "#253248",
+        textColor: "rgba(255, 255, 255, 0.9)",
+      },
+      grid: {
+        vertLines: { color: "#334158" },
+        horzLines: { color: "#334158" },
+      },
+      crosshair: { mode: CrosshairMode.Normal },
+      priceScale: { borderColor: "#485c7b" },
+      timeScale: { borderColor: "#485c7b" },
+    });
 
+    chartRef.current = chart;
+
+    // ✅ candlestick
+    const candleSeries = chart.addCandlestickSeries({
+      upColor: "#4bffb5",
+      downColor: "#ff4976",
+      borderDownColor: "#ff4976",
+      borderUpColor: "#4bffb5",
+      wickDownColor: "#838ca1",
+      wickUpColor: "#838ca1",
+    });
+
+    candleSeries.setData(priceData);
+
+    // ✅ volume histogram
+    const volumeSeries = chart.addHistogramSeries({
+      color: "#182233",
+      lineWidth: 2,
+      priceFormat: { type: "volume" },
+      overlay: true,
+      scaleMargins: { top: 0.8, bottom: 0 },
+    });
+
+    volumeSeries.setData(volumeData);
+
+    // ✅ cleanup on unmount
     return () => {
       chart.remove();
     };
   }, []);
 
-  return <div ref={chartContainerRef} style={{ width: '100%', height: 400 }} />;
+  useEffect(() => {
+    if (!chartContainerRef.current || !chartRef.current) return;
+
+    resizeObserver.current = new ResizeObserver((entries) => {
+      const { width, height } = entries[0].contentRect;
+      chartRef.current?.applyOptions({ width, height });
+      setTimeout(() => {
+        chartRef.current?.timeScale().fitContent();
+      }, 0);
+    });
+
+    resizeObserver.current.observe(chartContainerRef.current);
+
+    return () => resizeObserver.current?.disconnect();
+  }, []);
+
+  return (
+    <div>
+      <div ref={chartContainerRef} className="chart-container" />
+    </div>
+  );
 };
 
-export default CandlestickChart;
+export default CandleStickChart;
