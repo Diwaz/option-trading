@@ -49,11 +49,11 @@ router.get("/about", (req, res) => {
 });
 
 // Other route groups
-router.use("/trade", tradeRouter);
+router.use("/candles", tradeRouter);
 router.use("/user", authRoutes);
 router.use(authenticateUser);
 router.use("/balances", balanceRoutes);
-router.use("/trade", orderRoutes);
+router.use("/trades", orderRoutes);
 router.use("/getPrice",priceRoutes);
 
 

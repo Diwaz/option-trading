@@ -35,6 +35,7 @@ export const updateBalanceForUser = (
   margin: number,
   type : "buy" | "sell",
 )=>{
+
       let userBalance = balances[userId];
       console.log("type of trade",type);
       
