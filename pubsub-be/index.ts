@@ -1,7 +1,7 @@
 // server.js
 import { createClient } from 'redis';
 import WebSocket, { WebSocketServer } from 'ws';
-import type {Trade} from '../poller-be/index';
+import type { Trade } from '../poller-be/index';
 
 // This array will ONLY store clients that have successfully subscribed.
 let subscribedUsers = new Set(); // Using a Set is better to prevent duplicates.
@@ -10,6 +10,52 @@ interface spreadData {
   bid: number,
   ask: number,
 
+}
+interface Ticker {
+  symbol: string,
+  buyPrice: number,
+  sellPrice: number,
+  decimals: number
+}
+
+let marketData = {
+  price_updates: [
+    {
+      symbol: "BTC",
+      buyPrice: 1002000000, // decimal is 4
+      sellPrice: 1000000000,
+      decimals: 4,
+    },
+    {
+      symbol: "SOL",
+      buyPrice: 2000000,
+      sellPrice: 1900000,
+      decimals: 4,
+    },
+    {
+      symbol: "ETH",
+      buyPrice: 44000000,
+      sellPrice: 43900000,
+      decimals: 4,
+    }
+  ]
+};
+
+function updatePrice(symbol: string, newBuy: number, newSell: number) {
+  const entry = marketData.price_updates.find(item => item.symbol === symbol);
+
+  if (entry) {
+    entry.buyPrice = newBuy;
+    entry.sellPrice = newSell;
+  } else {
+    // optional: add new symbol if not found
+    marketData.price_updates.push({
+      symbol,
+      buyPrice: newBuy,
+      sellPrice: newSell,
+      decimals: 4
+    });
+  }
 }
 const subscribeToRedis = async () => {
   const client = createClient({ url: 'redis://localhost:6379' });
@@ -20,20 +66,16 @@ const subscribeToRedis = async () => {
 
   // Subscribe to the 'btcusdt' channel on Redis
   await subscriber.subscribe('tradeData', (message) => {
-    const dataJSON:Trade = JSON.parse(message);
+    const dataJSON: Trade = JSON.parse(message);
     // console.log(`[Redis] Received:`,dataJSON); // Log message from Redis
-    console.log(message);
-    // const spreadData: spreadData = {
-    //   bid : dataJSON.p * 1.02,
-    //   ask : dataJSON.p * 0.98,
-    //   s : dataJSON.s
-    // }  
-    
+    updatePrice(dataJSON.symbol, dataJSON.buyPrice, dataJSON.sellPrice, dataJSON.decimals)
+    // console.log(marketData);
+
     // Send the message to every client in our Set of subscribers
     subscribedUsers.forEach((ws) => {
       // Ensure the client is still connected before sending
       if (ws.readyState === WebSocket.OPEN) {
-        ws.send(message);
+        ws.send(JSON.stringify(marketData));
       }
     });
   });
@@ -47,40 +89,19 @@ const wss = new WebSocketServer({ port: 8080 });
 console.log("🚀 WebSocket server started on ws://localhost:8080");
 
 wss.on('connection', function connection(ws) {
-  console.log('🎉 A new client connected!');
-  ws.send(JSON.stringify({ message: 'Welcome! Please send a SUBSCRIBE message.' }));
 
-  ws.on('message', function message(data) {
-    try {
-      // 1. Always parse incoming messages from clients
-      const incomingMessage = JSON.parse(data.toString());
-      console.log('📥 Received message:', incomingMessage);
 
-      // 2. Check the message type for a subscription request
-      if (incomingMessage.type === 'SUBSCRIBE' && incomingMessage.data?.stock === 'btcusdt') {
-        console.log('✅ Client subscribed to btcusdt');
-        
-        // 3. Add this specific client (ws) to the Set of subscribers
-        subscribedUsers.add(ws); 
-        
-        ws.send(JSON.stringify({ status: 'success', message: 'You are now subscribed to btcusdt.' }));
-      } else {
-        ws.send(JSON.stringify({ status: 'error', message: 'Invalid message format or stock.' }));
-      }
-    } catch (error) {
-      console.error('Failed to parse message or invalid JSON format.');
-      ws.send(JSON.stringify({ status: 'error', message: 'Invalid JSON format.' }));
-    }
-  });
+  subscribedUsers.add(ws);
+
 
   ws.on('close', () => {
     console.log(' A client has disconnected.');
-    
+
     // 4. Remove the disconnected client from the Set of subscribers
-    subscribedUsers.delete(ws); 
-    
+    subscribedUsers.delete(ws);
+
     console.log(`Removed subscriber. Remaining subscribers: ${subscribedUsers.size}`);
   });
-  
+
   ws.on('error', console.error);
 });
