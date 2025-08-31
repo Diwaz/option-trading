@@ -5,7 +5,7 @@ const client = new Client({
   host: 'localhost',
   database: 'postgres',
   password: 'admin',
-  port: 5431,
+  port: 5432,
 });
 
 async function initializeDB(market) {
@@ -62,6 +62,6 @@ async function initializeDB(market) {
 }
 
 // Example usage:
-// initializeDB("BTCUSDT").catch(console.error);
+initializeDB("BTCUSDT").catch(console.error);
 // initializeDB("ETHUSDT").catch(console.error);
-initializeDB("SOLUSDT").catch(console.error);
+// initializeDB("SOLUSDT").catch(console.error);

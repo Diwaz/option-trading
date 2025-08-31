@@ -4,11 +4,11 @@ import { type Trade } from '../poller-be';
 
 // 1. Configure PostgreSQL connection
 const pg = new Client({
-  user: 'optionTradTest',
+  user: 'postgres',
   host: 'localhost',
   database: 'postgres',
   password: 'admin',
-  port: 5430,
+  port: 5432,
 });
 pg.connect();
 

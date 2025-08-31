@@ -9,7 +9,7 @@ import {users} from './auth.js';
 const router = express.Router();
 
 const authenticateUser =(req,res,next)=>{
-  const authHeader = req.headers["authorization"];
+  const authHeader = req.headers["authorization"].split(" ")[1];
   // console.log('authHeader',authHeader);
   const token = authHeader;
 
@@ -49,11 +49,11 @@ router.get("/about", (req, res) => {
 });
 
 // Other route groups
-router.use("/trade", tradeRouter);
+router.use("/candles", tradeRouter);
 router.use("/user", authRoutes);
 router.use(authenticateUser);
-router.use("/balances", balanceRoutes);
-router.use("/trades", orderRoutes);
+router.use("/balance", balanceRoutes);
+router.use("/trade", orderRoutes);
 router.use("/getPrice",priceRoutes);
 
 

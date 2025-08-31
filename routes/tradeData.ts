@@ -4,11 +4,11 @@ import { Client } from "pg";
 const router = express.Router();
 
 const client = new Client({
-  user: "optionTradTest",
+  user: "postgres",
   host: "localhost",
   database: "postgres",
   password: "admin",
-  port: 5430,
+  port: 5432,
 });
 await client.connect();
 
