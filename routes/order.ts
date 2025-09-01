@@ -1,7 +1,8 @@
 import express, { json, raw } from "express";
-import { updateBalanceForUser } from "./balances";
+import { updateBalanceForClosedOrder, updateBalanceForUser } from "./balances";
 import {prices} from '../index';
 import {randomUUIDv7} from 'bun';
+
 
 const router = express.Router();
 
@@ -93,7 +94,7 @@ const qty = exposure / openPrice; // how many units of asset bought
 
 // 4. Calculate PnL
 const rawPnl = (closePrice - openPrice) * qty;
-
+const totalTransaction = rawPnl+margin;
 
   const closedTrade : closedTrade = {
     ...trade,
@@ -103,7 +104,8 @@ const rawPnl = (closePrice - openPrice) * qty;
 
   user.trades.splice(tradeIndex,1);
   openTradesArray.splice(tradeArrayIndex,1);
-
+  console.log('after closing balance',totalTransaction)
+  updateBalanceForClosedOrder(userId,totalTransaction);
   if (!closedTrades[userId]) {
     closedTrades[userId] = { trades: [] }; 
   }

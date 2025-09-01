@@ -54,7 +54,7 @@ const liquidationEngine = (liveTrade) => {
 
       if (liveTrade.sellPrice < order.openPrice) {
         const changePercentge = (order.openPrice - liveTrade.sellPrice) / order.openPrice;
-        if (changePercentge > 9 / (order.leverage)) {
+        if (changePercentge > 90 / (order.leverage)) {
           // close order
           const index = openTradesArray.findIndex(i => i.orderId == order.orderId);
           openTradesArray.splice(index, 1)

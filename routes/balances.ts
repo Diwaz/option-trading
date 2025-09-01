@@ -27,6 +27,10 @@ router.get("/", (req, res) => {
 export const initBalanceForUser = (userId: string) => {
   balances[userId] = { usd_balance:  500000  }; // default starting balance
 };
+export const updateBalanceForClosedOrder = (userId:string,pnl:number) => {
+  let userBalance = balances[userId];
+  userBalance.usd_balance += pnl;
+}
 export const updateBalanceForUser = (
   userId:string,
   token :string ,
@@ -37,17 +41,17 @@ export const updateBalanceForUser = (
 )=>{
 
       let userBalance = balances[userId];
-      console.log("type of trade",type);
+      console.log("type of trade",margin/1e2);
       
       if (type === "buy"){
         // deduct user balance
         // 1 . get margin 
-        userBalance.usd_balance -= margin;
+        userBalance.usd_balance -= (margin/1e2);
         console.log('stock buy worth',margin);
 
       }
       if (type === "sell"){
-        userBalance.usd_balance += (margin*1e2);
+        userBalance.usd_balance -= (margin/1e2);
       }
 //   // BUY-SELL WITHOUT LEVERAGE 
 //     // if (!leverage){
