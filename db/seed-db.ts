@@ -8,7 +8,7 @@ const client = new Client({
   port: 5432,
 });
 
-async function initializeDB(market) {
+async function initializeDB(market:string) {
   const tableName = market.toLowerCase(); // normalize to lowercase
 
   await client.connect();
@@ -58,7 +58,7 @@ async function initializeDB(market) {
   }
 
   await client.end();
-  console.log(`✅ Database initialized successfully for ${market}`);
+  console.log(` Database initialized successfully for ${market}`);
 }
 
 // Example usage:

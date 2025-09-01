@@ -1,16 +1,11 @@
 // server.js
 import { createClient } from 'redis';
-import WebSocket, { WebSocketServer } from 'ws';
-import type { Trade } from '../poller-be/index';
+import WebSocket, { WebSocketServer } from "ws";
 
 // This array will ONLY store clients that have successfully subscribed.
-let subscribedUsers = new Set(); // Using a Set is better to prevent duplicates.
-interface spreadData {
-  s: String,
-  bid: number,
-  ask: number,
+// set avoid storing dublicates
+let subscribedUsers = new Set<WebSocket>(); 
 
-}
 interface Ticker {
   symbol: string,
   buyPrice: number,
@@ -18,8 +13,18 @@ interface Ticker {
   decimals: number
 }
 
+interface priceUpdates {
+  buyPrice:number,
+  sellPrice:number,
+  symbol:string,
+  decimals: number
+}
+interface marketData {
+  price_updates: priceUpdates;
+}
+
 let marketData = {
-  price_updates: [
+   price_updates: [
     {
       symbol: "BTC",
       buyPrice: 1002000000, // decimal is 4
@@ -42,7 +47,7 @@ let marketData = {
 };
 
 function updatePrice(symbol: string, newBuy: number, newSell: number) {
-  const entry = marketData.price_updates.find(item => item.symbol === symbol);
+  const entry:priceUpdates | undefined = marketData.price_updates.find(item => item.symbol === symbol);
 
   if (entry) {
     entry.buyPrice = newBuy;
@@ -66,9 +71,9 @@ const subscribeToRedis = async () => {
 
   // Subscribe to the 'btcusdt' channel on Redis
   await subscriber.subscribe('tradeData', (message) => {
-    const dataJSON: Trade = JSON.parse(message);
+    const dataJSON: Ticker = JSON.parse(message);
     // console.log(`[Redis] Received:`,dataJSON); // Log message from Redis
-    updatePrice(dataJSON.symbol, dataJSON.buyPrice, dataJSON.sellPrice, dataJSON.decimals)
+    updatePrice(dataJSON.symbol, dataJSON.buyPrice, dataJSON.sellPrice)
     // console.log(marketData);
 
     // Send the message to every client in our Set of subscribers
@@ -86,9 +91,9 @@ subscribeToRedis().catch(console.error);
 
 // Create a new WebSocket server on port 8080.
 const wss = new WebSocketServer({ port: 8080 });
-console.log("🚀 WebSocket server started on ws://localhost:8080");
+console.log(" WebSocket server started on ws://localhost:8080");
 
-wss.on('connection', function connection(ws) {
+wss.on('connection', function connection(ws:WebSocket) {
 
 
   subscribedUsers.add(ws);

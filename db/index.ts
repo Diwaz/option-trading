@@ -10,7 +10,7 @@ const pg = new Client({
   password: 'admin',
   port: 5432,
 });
-pg.connect();
+await pg.connect();
 
 // 2. Extract only relevant fields
 const extractReleventData = (trade: Trade) => {
